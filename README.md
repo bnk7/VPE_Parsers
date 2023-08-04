@@ -56,7 +56,8 @@ These are dependencies for medcpt.py.
 
 ## Test Sentences
 In addition to the Python scripts, this repository includes test sentences to use as input.
-The sentences are drawn from Goldner (2021) and Canavan et al. (1997) and grouped by source and type.
+The sentences are drawn from Goldner (2021), Canavan et al. (1997), and Kendall and Farrington (2023) and grouped by 
+source and type.
 The user should change the commented variables in each code file to switch to a different test sentence group.
 
 ## References
@@ -65,10 +66,13 @@ Canavan, Alexandra, David Graff, and George Zipperlen (1997). CALLHOME American 
 Consortium.
 
 Gardner, Matt, Joel Grus, Mark Neumann, Oyvind Tafjord, Pradeep Dasigi, Nelson F. Liu, Matthew Peters, Michael
-Schmitz, and Luke Zettlemoyer (2018). AllenNLP: A deep semantic natural language processing platform. In Proc. of Workshop
-for NLP Open Source Software (NLP-OSS), pages 1–6.
+Schmitz, and Luke Zettlemoyer (2018). AllenNLP: A deep semantic natural language processing platform. In Proc. of 
+Workshop for NLP Open Source Software (NLP-OSS), pages 1–6.
 
 Goldner, Eli (2021). VP-Ellipsis-Rule-Out. https://github.com/etgld/VP-Ellipsis-Rule-Out/tree/main.
+
+Kendall, Tyler and Charlie Farrington (2023). The Corpus of Regional African American Language. Version 2023.06. 
+Eugene, OR: The Online Resources for African American Language Project. https://doi.org/10.7264/1ad5-6t35.
 
 Kitaev, N. and D. Klein (2018). Constituency parsing with a self-attentive encoder. In Proc. of ACL, pages 2676–2686.
 
