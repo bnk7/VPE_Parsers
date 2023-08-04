@@ -1,0 +1,4 @@
+benepar
+stanza
+spacy
+numpy
