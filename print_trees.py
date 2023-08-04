@@ -6,9 +6,10 @@ import os
 
 pos_list = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
             'POS', 'PRP', 'PP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
-            'WDT', 'WP', 'WP$', 'WRB', '#', '$', '.', ',', ':', '(', ')', '"', "‘", '“', "’", '”', 'HYPH']
+            'WDT', 'WP', 'WP$', 'WRB', '#', '$', '.', ',', ':', '(', ')', '"', "‘", '“', "’", '”', 'HYPH', 'PRP$']
 constituent_list = ['ADJP', 'ADVP', 'NP', 'PP', 'S', 'SBAR', 'SBARQ', 'SINV', 'SQ', 'VP', 'WHADVP', 'WHNP', 'WHPP',
-                    'X', '*', '0', 'T', 'FRAG', 'UCP', 'NP-TMP', 'NAC', 'NML', 'PRT', 'INTJ']
+                    'X', '*', '0', 'T', 'CONJP', 'INTJ', 'FRAG', 'LST', 'NAC', 'NP-TMP', 'NML', 'NX', 'PRN', 'PRT',
+                    'QP', 'RRC', 'UCP', 'WHADJP']
 
 
 def is_greater(first: str, second: str) -> bool:
@@ -24,7 +25,8 @@ def is_greater(first: str, second: str) -> bool:
         return True
     # S > VP
     # S > NP
-    if first == 'S' and (second == 'VP' or second == 'NP'):
+    # S > INTJ
+    if first == 'S' and (second == 'VP' or second == 'NP' or second == 'INTJ'):
         return True
     # UCP > ADVP
     if first == 'UCP' and second == 'ADVP':
@@ -35,7 +37,11 @@ def is_greater(first: str, second: str) -> bool:
         return True
     # SBAR > VP
     # SBAR > S
-    if first == 'SBAR' and (second == 'VP' or second == 'S'):
+    # SBAR > INTJ
+    if first == 'SBAR' and (second == 'VP' or second == 'S' or second == 'INTJ'):
+        return True
+    # VP > ADVP
+    if first == 'VP' and second == 'ADVP':
         return True
     return False
 
