@@ -178,7 +178,7 @@ def create_trees(sent: int, iteration: dict, sents: list) -> tuple:
             weighted_full_sent_list = initialize(weighted_pos_agg[0], indices)
         else:
             full_sent_list = add_to_pos(pos_agg[i], indices, full_sent_list)
-            weighted_full_sent_list = add_to_pos(pos_agg[i], indices, weighted_full_sent_list)
+            weighted_full_sent_list = add_to_pos(weighted_pos_agg[i], indices, weighted_full_sent_list)
 
     parse = replace_keys(full_sent_list, char_dict)
     weighted_parse = replace_keys(weighted_full_sent_list, char_dict)
