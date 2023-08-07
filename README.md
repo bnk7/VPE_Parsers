@@ -60,6 +60,9 @@ The sentences are drawn from Goldner (2021), Canavan et al. (1997), and Kendall 
 source and type.
 The user should change the commented variables in each code file to switch to a different test sentence group.
 
+## Citation
+Per the request of the author, please cite Kulkarni et al. (2022) if you use the parts of this repository written by them.
+
 ## References
 
 Canavan, Alexandra, David Graff, and George Zipperlen (1997). CALLHOME American English Speech. Linguistic Data 
