@@ -43,6 +43,12 @@ def is_greater(first: str, second: str) -> bool:
     # VP > ADVP
     if first == 'VP' and second == 'ADVP':
         return True
+    # ADJP > ADVP
+    if first == 'ADJP' and second == 'ADVP':
+        return True
+    # ADVP > INTJ
+    if first == 'ADVP' and second == 'INTJ':
+        return True
     return False
 
 
