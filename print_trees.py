@@ -4,10 +4,10 @@ import re
 import os
 
 
-pos_list = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
+pos_tagset = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
             'POS', 'PRP', 'PP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
             'WDT', 'WP', 'WP$', 'WRB', '#', '$', '.', ',', ':', '(', ')', '"', "‘", '“', "’", '”', 'HYPH', 'PRP$']
-constituent_list = ['ADJP', 'ADVP', 'NP', 'PP', 'S', 'SBAR', 'SBARQ', 'SINV', 'SQ', 'VP', 'WHADVP', 'WHNP', 'WHPP',
+syntactic_tagset = ['ADJP', 'ADVP', 'NP', 'PP', 'S', 'SBAR', 'SBARQ', 'SINV', 'SQ', 'VP', 'WHADVP', 'WHNP', 'WHPP',
                     'X', '*', '0', 'T', 'CONJP', 'INTJ', 'FRAG', 'LST', 'NAC', 'NP-TMP', 'NML', 'NX', 'PRN', 'PRT',
                     'QP', 'RRC', 'UCP', 'WHADJP']
 
@@ -19,9 +19,9 @@ def is_greater(first: str, second: str) -> bool:
 
     :param first: the first label
     :param second: the second label
-    :return: if the first argument is a higher constituent than the second
+    :return: whether the first argument is a higher constituent than the second
     """
-    if second in pos_list:
+    if second in pos_tagset:
         return True
     # S > VP
     # S > NP
@@ -56,7 +56,7 @@ def initialize(labels: list, idx_list: list) -> list:
     """
     Insert topmost node(s) into a tree represented as a list of strings making up its bracket notation.
 
-    :param labels: constituent(s) associated with the character span
+    :param labels: syntactic tag(s) associated with the character span
     :param idx_list: original tree
     :return: updated tree
     """
@@ -71,7 +71,7 @@ def add_to_pos(labels: list, idx_list: list, sent_list: list) -> list:
     """
     Insert node(s) into a tree represented as a list of strings making up its bracket notation.
 
-    :param labels: part of speech and/or constituent(s) associated with the character span
+    :param labels: part of speech and/or syntactic tag(s) associated with the character span
     :param idx_list: original tree
     :param sent_list: current tree
     :return: updated tree
