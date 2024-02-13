@@ -1,8 +1,8 @@
 # Parsing Sentences Containing VPE
 
-This repository draws from Goldner (2021) and Kulkarni et al. (2022) to explore how various existing
-constituency parsers and aggregation methods handle sentences containing verb phrase ellipsis (VPE), with the goal of 
-using one of these parsers in an effort to automatically detect instances of VPE from raw text.
+Verb phrase ellipsis (VPE) is a syntactic phenomena in which an  entire verb phrase--including the verb itself, its objects, and its modifiers--is missing from a clause. In its place is some stranded word or words, often auxiliaries, and the listener or reader infers the rest from the context. Computers, however, do not have the common sense that humans do, so VPE is difficult for them to handle. Detecting instances of VPE is the first step to filling in the missing information.
+
+In an effort to automatically detect VPE in a linguistically-informed way, I have tried using constituency parsers to encode the internal structure of a sentence in a tree. In this repository, I draw from Goldner (2021) and Kulkarni et al. (2022) to explore how various existing constituency parsers and tree aggregation methods handle sentences containing VPE.
 The final output is a LaTeX file to display the trees for easy comparison.
 Some code is directly copied from these two sources, and I specify within the files when code is not my own.
 
