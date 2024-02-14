@@ -94,8 +94,8 @@ class medcpt:
             robinson_foulds_distance_array = []
             for j in range(0, len(folders)):
                 folder = folders[j]
-                pickle_path = str(pickle_dataset_dump_directory) + str(folder) + '/'
-                with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'rb') as handle:
+                pickle_path = os.path.join(pickle_dataset_dump_directory, folder)
+                with open(os.path.join(pickle_path, 'unique_sentence_cluster_dictionary.pickle'), 'rb') as handle:
                     unique_sentence_cluster_dictionary = pickle.load(handle)
                 robinson_foulds_distance = 0
                 for k in range(1, sentence_count + 1):
@@ -125,8 +125,8 @@ class medcpt:
             error_rate_array = []
             for j in range(0, len(folders)):
                 folder = folders[j]
-                pickle_path = str(pickle_dataset_dump_directory) + str(folder) + '/'
-                with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'rb') as handle:
+                pickle_path = os.path.join(pickle_dataset_dump_directory, folder)
+                with open(os.path.join(pickle_path, 'unique_sentence_cluster_dictionary.pickle'), 'rb') as handle:
                     unique_sentence_cluster_dictionary = pickle.load(handle)
                 error_rate_label = []
                 for k in range(1, sentence_count + 1):
@@ -314,7 +314,7 @@ def medcpt_aggregate_labels(input_directory, folders, sentence_count):
 
 
 def medcpt_aggregate_clusters(input_directory, folders, sentence_count):
-    pickle_dump_directory = "dictionary_pickle_files/"
+    pickle_dump_directory = "dictionary_pickle_files"
 
     pickle_dataset_dump_directory = os.path.join(pickle_dump_directory, input_directory)
     medcpt_directory = os.path.join(pickle_dump_directory, input_directory, 'medcpt')

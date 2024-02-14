@@ -13,6 +13,10 @@ parser.add_argument('--test_sentences', type=str, help='The set of test sentence
                     default='basic_VPE')
 args = parser.parse_args()
 
+if not os.path.exists(os.path.expanduser('~/stanza_corenlp')):
+    import stanza
+    stanza.install_corenlp()
+
 ben = spacy.load('en_core_web_md')
 ben.add_pipe("benepar", config={"model": "benepar_en3"})
 corenlp = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')

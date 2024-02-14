@@ -11,7 +11,7 @@ import re
 import os
 import argparse
 
-parser = argparse.ArgumentParser(description='Output trees to a PDF using LaTeX')
+parser = argparse.ArgumentParser(description='Output trees to LaTeX')
 parser.add_argument('--test_sentences', type=str, help='The set of test sentences to input',
                     choices=['basic_VPE', 'callhome_non_VPE', 'callhome_VPE', 'coraal', 'non_VPE', 'VPE_examples'],
                     default='basic_VPE')
@@ -123,9 +123,6 @@ def main():
             out.write("\\end{itemize}")
             out.write("\n\n \\end{samepage}")
     out.write(tail)
-    # this assumes you have LaTeX installed and working
-    # with the pdflatex command
-    # subprocess.run(['pdflatex', out_name])
 
 
 if __name__ == "__main__":
