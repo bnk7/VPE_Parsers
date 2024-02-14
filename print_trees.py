@@ -1,8 +1,13 @@
 import pickle
-import pprint
 import re
 import os
+import argparse
 
+parser = argparse.ArgumentParser(description='Print and save parse trees in bracket notation')
+parser.add_argument('--test_sentences', type=str, help='The set of test sentences to input',
+                    choices=['basic_VPE', 'callhome_non_VPE', 'callhome_VPE', 'coraal', 'non_VPE', 'VPE_examples'],
+                    default='basic_VPE')
+args = parser.parse_args()
 
 pos_tagset = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
             'POS', 'PRP', 'PP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
@@ -206,36 +211,30 @@ def save_to_file(t: str, num: int, fold: str) -> None:
     :param fold: name of the folder in which to save the file
     :return: None
     """
-    output_path = 'cptam/' + fold
+    output_path = os.path.join('cptam', fold)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
-    with open(output_path + '/sentence_' + str(num) + '.txt', 'w') as f:
+    with open(os.path.join(output_path, 'sentence_' + str(num) + '.txt'), 'w') as f:
         f.write(t.strip())
 
 
 if __name__ == '__main__':
-    # CHANGE THIS VALUE TO PROCESS A DIFFERENT SET OF TEST SENTENCES
-    directories = ["basic_VPE/"]
-
     # retrieve output of medcpt.py
     # this code adapted from Kulkarni et al. (2022)
     pickle_dump_directory = "dictionary_pickle_files/"
     dataset_directory = "dataset/"
-    for d in range(0, len(directories)):
-        print("Dataset: " + str(str(directories[d]).split('/')[0]))
-        pickle_directory = str(pickle_dump_directory) + str(directories[d])
-        medcpt_directory = str(pickle_directory) + 'medcpt'
-        with open(str(medcpt_directory) + '/medcpt_aggregate_clusters_dictionary_log.pickle', 'rb') as handle:
-            medcpt_aggregate_clusters_dictionary = pickle.load(handle)
+    print("Dataset: " + args.test_sentences)
+    pickle_directory = os.path.join(pickle_dump_directory, args.test_sentences)
+    medcpt_directory = os.path.join(pickle_directory, 'medcpt')
+    with open(os.path.join(medcpt_directory, 'medcpt_aggregate_clusters_dictionary_log.pickle'), 'rb') as handle:
+        medcpt_aggregate_clusters_dictionary = pickle.load(handle)
 
     num_iterations = len(medcpt_aggregate_clusters_dictionary)
     final_iteration = medcpt_aggregate_clusters_dictionary[num_iterations]
-    # pprint.pprint(final_iteration)
 
     # retrieve sentences
-    folder = directories[0][:-1]
     sentences = []
-    with open('test_sentences/' + folder) as source_file:
+    with open(os.path.join('test_sentences', args.test_sentences)) as source_file:
         for line in source_file:
             split = line.split(':')
             text = split[1].strip()
@@ -250,5 +249,5 @@ if __name__ == '__main__':
             if tree != weighted_tree:
                 print('With weighted parsers:')
                 print(weighted_tree)
-                save_to_file(weighted_tree, idx + 1, 'weighted/' + folder)
-            save_to_file(tree, idx + 1, 'unweighted/' + folder)
+                save_to_file(weighted_tree, idx + 1, os.path.join('weighted', args.test_sentences))
+            save_to_file(tree, idx + 1, os.path.join('unweighted', args.test_sentences))

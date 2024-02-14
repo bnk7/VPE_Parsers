@@ -4,10 +4,18 @@ My changes:
 - wrote get_tree() and get_cptam()
 - added extra parsers to main()
 - changed the file input structure
+- added argparse
 """
 
 import re
 import os
+import argparse
+
+parser = argparse.ArgumentParser(description='Output trees to a PDF using LaTeX')
+parser.add_argument('--test_sentences', type=str, help='The set of test sentences to input',
+                    choices=['basic_VPE', 'callhome_non_VPE', 'callhome_VPE', 'coraal', 'non_VPE', 'VPE_examples'],
+                    default='basic_VPE')
+args = parser.parse_args()
 
 
 head = """\\documentclass[landscape, 12pt]{article} 
@@ -44,7 +52,7 @@ def get_tree(num: int, path: str, parser: str) -> str:
     :param parser: name of the parser
     :return: tree in bracketed notation
     """
-    with open(path + parser + '/sentence_' + str(num) + '.txt') as file:
+    with open(os.path.join(path, parser, 'sentence_' + str(num) + '.txt')) as file:
         output = file.readline()
     return output
 
@@ -57,7 +65,7 @@ def get_cptam(num: int, directory: str) -> str:
     :param directory: folder in which aggregated tree is stored (weighted or unweighted)
     :return: tree in bracketed notation or empty string if the file doesn't exist
     """
-    file_name = 'cptam/' + directory + '/sentence_' + str(num) + '.txt'
+    file_name = os.path.join('cptam', directory, 'sentence_' + str(num) + '.txt')
     if not os.path.exists(file_name):
         return ''
     with open(file_name) as file:
@@ -81,12 +89,9 @@ def texify_tree(s):
 
 
 def main():
-    # CHANGE THIS VALUE TO PROCESS A DIFFERENT SET OF TEST SENTENCES
-    folder = 'basic_VPE'
-
-    input_path = 'test_sentences/' + folder
-    tree_path = 'dataset/' + folder + '/'
-    out = open(folder + '.tex', 'w')
+    input_path = os.path.join('test_sentences', args.test_sentences)
+    tree_path = os.path.join('dataset', args.test_sentences)
+    out = open(args.test_sentences + '.tex', 'w')
     out.write(head)
     with open(input_path) as f:
         for idx, line in enumerate(f):
@@ -101,8 +106,8 @@ def main():
             s_final = texify_tree(get_tree(idx + 1, tree_path, 'corenlp'))
             b_final = texify_tree(get_tree(idx + 1, tree_path, 'berkeley'))
             a_final = texify_tree(get_tree(idx + 1, tree_path, 'allennlp'))
-            c_final = texify_tree(get_cptam(idx + 1, 'unweighted/' + folder))
-            c2 = get_cptam(idx + 1, 'weighted/' + folder)
+            c_final = texify_tree(get_cptam(idx + 1, os.path.join('unweighted', args.test_sentences)))
+            c2 = get_cptam(idx + 1, os.path.join('weighted', args.test_sentences))
             out.write("\\begin{itemize} \n\n \\item {\\bf Stanford Parser (CoreNLP):} \n\n ")
             out.write(s_final)
             out.write("\n\n \\item {\\bf Berkeley Parser: } \n\n")

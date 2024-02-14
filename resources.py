@@ -3,6 +3,8 @@ Code source: Kulkarni et al. (2022)
 My changes:
 - removed hanlp
 - changed the values of some variables to match the directory structure
+- simplified the reading of files in dictionary_creation()
+- added argparse
 """
 
 import re
@@ -10,7 +12,14 @@ import pickle
 import os
 import random
 import string
+import argparse
 letters = string.ascii_lowercase
+
+parser = argparse.ArgumentParser(description='Process parse trees')
+parser.add_argument('--test_sentences', type=str, help='The set of test sentences to input',
+                    choices=['basic_VPE', 'callhome_non_VPE', 'callhome_VPE', 'coraal', 'non_VPE', 'VPE_examples'],
+                    default='basic_VPE')
+args = parser.parse_args()
 
 
 class clusters_from_parsed_sentence:
@@ -155,97 +164,89 @@ class character_indexing:
 
 
 def dictionary_creation():
-    pickle_dump_directory = "dictionary_pickle_files/"
-    dataset_directory = "dataset/"
+    pickle_dump_directory = "dictionary_pickle_files"
+    dataset_directory = "dataset"
     folders = ["berkeley", "corenlp", "allennlp"]
-    # CHANGE THESE VALUES TO PROCESS A DIFFERENT SET OF TEST SENTENCES
-    directories = ["basic_VPE/"]
-    sentences = [10]
+    directory = os.path.join(dataset_directory, args.test_sentences)
 
-    for i in range(0, len(directories)):
-        directory = str(dataset_directory) + str(directories[i])
-        sentence_count = sentences[i]
-        for j in range(0, len(folders)):
-            folder = folders[j]
-            path = str(directory) + str(folder) + '/'
-            sentence_dictionary = {}
-            sentence_cluster_dictionary = {}
-            parser_input_dictionary = {}
-            for k in range(1, sentence_count + 1):
-                try:
-                    read_file = open(str(path) + 'sentence_' + str(k) + '.txt', 'r')
-                    read_line = read_file.readline()
-                except:
-                    write_file = open(str(path) + 'sentence_' + str(k) + '.txt', 'w')
-                    write_file.close()
-                    read_file = open(str(path) + 'sentence_' + str(k) + '.txt', 'r')
-                    read_line = read_file.readline()
-                parsed_sentence = read_line.rstrip()
-                parser_input_dictionary[k] = {}
-                parser_input_dictionary[k]['parsed_input_sentence'] = parsed_sentence
-                try:
-                    character_indexing_object = character_indexing(parsed_sentence=parsed_sentence, language='English')
-                    formatted_parsed_sentence, characters, character_index = character_indexing_object.format_parsed_sentence(
-                        parsed_sentence=parsed_sentence)
-                    clusters_from_parsed_sentence_object = clusters_from_parsed_sentence(
-                        parsed_sentence=formatted_parsed_sentence, language='English')
-                    character_clusters, cluster_span, cluster_pos = clusters_from_parsed_sentence_object.get_clusters()
-                    sentence_dictionary[k] = {}
-                    sentence_dictionary[k]['parsed_sentence'] = parsed_sentence
-                    sentence_dictionary[k]['formatted_parsed_sentence'] = formatted_parsed_sentence
-                    sentence_dictionary[k]['characters'] = characters
-                    sentence_dictionary[k]['character_index'] = character_index
-                    sentence_dictionary[k]['character_index_size'] = len(character_index)
-                    sentence_dictionary[k]['error'] = False
-                    sentence_cluster_dictionary[k] = {}
-                    sentence_cluster_dictionary[k]['formatted_parsed_sentence'] = formatted_parsed_sentence
-                    sentence_cluster_dictionary[k]['character_clusters'] = character_clusters
-                    sentence_cluster_dictionary[k]['cluster_span'] = cluster_span
-                    sentence_cluster_dictionary[k]['cluster_pos'] = cluster_pos
-                    sentence_cluster_dictionary[k]['error'] = False
-                except:
-                    sentence_dictionary[k] = {}
-                    sentence_dictionary[k]['parsed_sentence'] = ''
-                    sentence_dictionary[k]['formatted_parsed_sentence'] = ''
-                    sentence_dictionary[k]['characters'] = []
-                    sentence_dictionary[k]['character_index'] = []
-                    sentence_dictionary[k]['character_index_size'] = 0
-                    sentence_dictionary[k]['error'] = True
-                    sentence_cluster_dictionary[k] = {}
-                    sentence_cluster_dictionary[k]['formatted_parsed_sentence'] = ''
-                    sentence_cluster_dictionary[k]['character_clusters'] = []
-                    sentence_cluster_dictionary[k]['cluster_span'] = []
-                    sentence_cluster_dictionary[k]['cluster_pos'] = []
-                    sentence_cluster_dictionary[k]['error'] = True
+    for folder in folders:
+        path = os.path.join(directory, folder)
+        sentence_dictionary = {}
+        sentence_cluster_dictionary = {}
+        parser_input_dictionary = {}
+        for j, filename in enumerate(os.listdir(path)):
+            k = j + 1
+            file = os.path.join(path, filename)
 
-            pickle_directory = str(pickle_dump_directory) + str(directories[i])
-            if not os.path.exists(pickle_dump_directory):
-                os.mkdir(pickle_dump_directory)
-            if not os.path.exists(pickle_directory):
-                os.mkdir(pickle_directory)
-            pickle_path = str(pickle_directory) + str(folder) + '/'
-            if not os.path.exists(pickle_path):
-                os.mkdir(pickle_path)
-            with open(str(pickle_path) + '/sentence_dictionary.pickle', 'wb') as handle:
-                pickle.dump(sentence_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            with open(str(pickle_path) + '/sentence_cluster_dictionary.pickle', 'wb') as handle:
-                pickle.dump(sentence_cluster_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            read_file = open(file, 'r')
+            read_line = read_file.readline()
 
-            with open(str(pickle_path) + '/parser_input_dictionary.pickle', 'wb') as handle:
-                pickle.dump(parser_input_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            parsed_sentence = read_line.rstrip()
+            parser_input_dictionary[k] = {}
+            parser_input_dictionary[k]['parsed_input_sentence'] = parsed_sentence
+            try:
+                character_indexing_object = character_indexing(parsed_sentence=parsed_sentence, language='English')
+                formatted_parsed_sentence, characters, character_index = character_indexing_object.format_parsed_sentence(
+                    parsed_sentence=parsed_sentence)
+                clusters_from_parsed_sentence_object = clusters_from_parsed_sentence(
+                    parsed_sentence=formatted_parsed_sentence, language='English')
+                character_clusters, cluster_span, cluster_pos = clusters_from_parsed_sentence_object.get_clusters()
+                sentence_dictionary[k] = {}
+                sentence_dictionary[k]['parsed_sentence'] = parsed_sentence
+                sentence_dictionary[k]['formatted_parsed_sentence'] = formatted_parsed_sentence
+                sentence_dictionary[k]['characters'] = characters
+                sentence_dictionary[k]['character_index'] = character_index
+                sentence_dictionary[k]['character_index_size'] = len(character_index)
+                sentence_dictionary[k]['error'] = False
+                sentence_cluster_dictionary[k] = {}
+                sentence_cluster_dictionary[k]['formatted_parsed_sentence'] = formatted_parsed_sentence
+                sentence_cluster_dictionary[k]['character_clusters'] = character_clusters
+                sentence_cluster_dictionary[k]['cluster_span'] = cluster_span
+                sentence_cluster_dictionary[k]['cluster_pos'] = cluster_pos
+                sentence_cluster_dictionary[k]['error'] = False
+            except:
+                sentence_dictionary[k] = {}
+                sentence_dictionary[k]['parsed_sentence'] = ''
+                sentence_dictionary[k]['formatted_parsed_sentence'] = ''
+                sentence_dictionary[k]['characters'] = []
+                sentence_dictionary[k]['character_index'] = []
+                sentence_dictionary[k]['character_index_size'] = 0
+                sentence_dictionary[k]['error'] = True
+                sentence_cluster_dictionary[k] = {}
+                sentence_cluster_dictionary[k]['formatted_parsed_sentence'] = ''
+                sentence_cluster_dictionary[k]['character_clusters'] = []
+                sentence_cluster_dictionary[k]['cluster_span'] = []
+                sentence_cluster_dictionary[k]['cluster_pos'] = []
+                sentence_cluster_dictionary[k]['error'] = True
 
-            with open(str(pickle_path) + '/sentence_dictionary.pickle', 'rb') as handle:
-                sentence_dictionary_pickle = pickle.load(handle)
+        pickle_directory = os.path.join(pickle_dump_directory, folder)
+        if not os.path.exists(pickle_dump_directory):
+            os.mkdir(pickle_dump_directory)
+        if not os.path.exists(pickle_directory):
+            os.mkdir(pickle_directory)
+        pickle_path = str(pickle_directory) + folder + '/'
+        if not os.path.exists(pickle_path):
+            os.mkdir(pickle_path)
+        with open(str(pickle_path) + '/sentence_dictionary.pickle', 'wb') as handle:
+            pickle.dump(sentence_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(str(pickle_path) + '/sentence_cluster_dictionary.pickle', 'wb') as handle:
+            pickle.dump(sentence_cluster_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-            with open(str(pickle_path) + '/sentence_cluster_dictionary.pickle', 'rb') as handle:
-                sentence_cluster_dictionary_pickle = pickle.load(handle)
+        with open(str(pickle_path) + '/parser_input_dictionary.pickle', 'wb') as handle:
+            pickle.dump(parser_input_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-            with open(str(pickle_path) + '/parser_input_dictionary.pickle', 'rb') as handle:
-                parser_input_dictionary_pickle = pickle.load(handle)
+        with open(str(pickle_path) + '/sentence_dictionary.pickle', 'rb') as handle:
+            sentence_dictionary_pickle = pickle.load(handle)
 
-            print(sentence_dictionary_pickle == sentence_dictionary)
-            print(sentence_cluster_dictionary_pickle == sentence_cluster_dictionary)
-            print(parser_input_dictionary_pickle == parser_input_dictionary)
+        with open(str(pickle_path) + '/sentence_cluster_dictionary.pickle', 'rb') as handle:
+            sentence_cluster_dictionary_pickle = pickle.load(handle)
+
+        with open(str(pickle_path) + '/parser_input_dictionary.pickle', 'rb') as handle:
+            parser_input_dictionary_pickle = pickle.load(handle)
+
+        print(sentence_dictionary_pickle == sentence_dictionary)
+        print(sentence_cluster_dictionary_pickle == sentence_cluster_dictionary)
+        print(parser_input_dictionary_pickle == parser_input_dictionary)
     return True
 
 

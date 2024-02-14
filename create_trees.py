@@ -5,7 +5,13 @@ from allennlp.predictors.predictor import Predictor
 import allennlp_models.tagging
 import re
 import os
+import argparse
 
+parser = argparse.ArgumentParser(description='Parse the input sentences')
+parser.add_argument('--test_sentences', type=str, help='The set of test sentences to input',
+                    choices=['basic_VPE', 'callhome_non_VPE', 'callhome_VPE', 'coraal', 'non_VPE', 'VPE_examples'],
+                    default='basic_VPE')
+args = parser.parse_args()
 
 ben = spacy.load('en_core_web_md')
 ben.add_pipe("benepar", config={"model": "benepar_en3"})
@@ -54,28 +60,25 @@ def allen_parse(s: str) -> str:
 
 
 if __name__ == '__main__':
-    # CHANGE THIS VALUE TO PROCESS A DIFFERENT SET OF TEST SENTENCES
-    folder = 'basic_VPE'
-
     # retrieve sentences to parse
     sentences = []
-    with open('test_sentences/' + folder) as source_file:
+    with open(os.path.join('test_sentences', args.test_sentences)) as source_file:
         for line in source_file:
             split = line.split(':')
             text = split[1].strip()
             sentences.append(text)
 
     # set up directory structure
-    parent_dir = 'dataset/' + folder + '/'
-    child_dirs = ['berkeley/', 'corenlp/', 'allennlp/']
+    parent_dir = os.path.join('dataset', args.test_sentences)
+    child_dirs = ['berkeley', 'corenlp', 'allennlp']
 
     for child in child_dirs:
-        child_path = parent_dir + child
+        child_path = os.path.join(parent_dir, child)
         if not os.path.exists(child_path):
             os.makedirs(child_path)
 
     # parse sentences and store trees
-    output_files = [parent_dir + directory + 'sentence_' for directory in child_dirs]
+    output_files = [os.path.join(parent_dir, directory, 'sentence_') for directory in child_dirs]
     for idx, sentence in enumerate(sentences):
         berkeley_tree = berkeley_parse(sentence)
         stanford_tree = stanford_parse(sentence)

@@ -3,6 +3,8 @@ Code source: Kulkarni et al. (2022)
 My changes:
 - moved variable declarations to main()
 - changed the values of some variables to match the directory structure
+- simplified the reading of files
+- added argparse
 """
 
 import pickle
@@ -12,6 +14,13 @@ from compatibility import compatibility
 from evaluation import evaluation
 from collections import Counter
 import math
+import argparse
+
+parser = argparse.ArgumentParser(description='Aggregate parse trees')
+parser.add_argument('--test_sentences', type=str, help='The set of test sentences to input',
+                    choices=['basic_VPE', 'callhome_non_VPE', 'callhome_VPE', 'coraal', 'non_VPE', 'VPE_examples'],
+                    default='basic_VPE')
+args = parser.parse_args()
 
 
 class medcpt:
@@ -247,224 +256,209 @@ class medcpt:
         return pos_aggregation
 
 
-def medcpt_aggregate_labels(directories, folders, sentences):
+def medcpt_aggregate_labels(input_directory, folders, sentence_count):
     pickle_dump_directory = "dictionary_pickle_files/"
+    pickle_dataset_dump_directory = os.path.join(pickle_dump_directory, input_directory)
+    medcpt_directory = os.path.join(pickle_dump_directory, input_directory, 'medcpt')
+    with open(os.path.join(medcpt_directory, 'medcpt_aggregate_clusters_dictionary_log.pickle'), 'rb') as handle:
+        medcpt_aggregate_clusters_dictionary = pickle.load(handle)
 
-    for d in range(0, len(directories)):
-        dataset = directories[d]
-        pickle_dataset_dump_directory = str(pickle_dump_directory) + str(directories[d])
-        medcpt_directory = str(pickle_dump_directory) + str(dataset) + 'medcpt'
-        sentence_count = sentences[d]
-        with open(str(medcpt_directory) + '/medcpt_aggregate_clusters_dictionary_log.pickle', 'rb') as handle:
-            medcpt_aggregate_clusters_dictionary = pickle.load(handle)
+    iteration = 1
+    medcpt_iteration = 3
+    medcpt_object = medcpt(cluster_span=[], cluster_pos=[])
+    medcpt_aggregate_labels_dictionary = {}
+    input_parser_label_weight = medcpt_object.get_input_parser_weight_labels_log(iteration=iteration,
+                                                                    pickle_dataset_dump_directory=pickle_dataset_dump_directory,
+                                                                    folders=folders, sentence_count=sentence_count,
+                                                                    medcpt_dictionary=medcpt_aggregate_labels_dictionary)
+    previous_input_parser_weight = [0] * len(folders)
+    weight_vector_prev_iteration = np.asarray(previous_input_parser_weight)
+    weight_vector_this_iteration = np.asarray(input_parser_label_weight)
+    while (iteration < 6):
+        weight_vector_prev_iteration = weight_vector_this_iteration
+        medcpt_aggregate_labels_dictionary[iteration] = {}
+        for k in range(1, sentence_count + 1):
+            medcpt_clusters = medcpt_aggregate_clusters_dictionary[medcpt_iteration][k]['medcpt_clusters']
+            medcpt_pos = medcpt_aggregate_clusters_dictionary[medcpt_iteration][k]['medcpt_pos']
+            error = medcpt_aggregate_clusters_dictionary[medcpt_iteration][k]['error']
 
-        iteration = 1
-        medcpt_iteration = 3
-        medcpt_object = medcpt(cluster_span=[], cluster_pos=[])
-        medcpt_aggregate_labels_dictionary = {}
+            pos_aggregation = medcpt_object.aggregate_pos_labels(medcpt_pos=medcpt_pos,
+                                                                 input_parser_weight=input_parser_label_weight)
+
+            medcpt_aggregate_labels_dictionary[iteration][k] = {}
+            medcpt_aggregate_labels_dictionary[iteration][k]['medcpt_clusters'] = medcpt_clusters
+            medcpt_aggregate_labels_dictionary[iteration][k]['medcpt_pos'] = medcpt_pos
+            medcpt_aggregate_labels_dictionary[iteration][k]['pos_aggregation'] = pos_aggregation
+            medcpt_aggregate_labels_dictionary[iteration][k]['error'] = error
+            print(k)
+        medcpt_aggregate_labels_dictionary[iteration]['input_parser_label_weight'] = input_parser_label_weight
+        iteration = iteration + 1
         input_parser_label_weight = medcpt_object.get_input_parser_weight_labels_log(iteration=iteration,
-                                                                        pickle_dataset_dump_directory=pickle_dataset_dump_directory,
-                                                                        folders=folders, sentence_count=sentence_count,
-                                                                        medcpt_dictionary=medcpt_aggregate_labels_dictionary)
-        previous_input_parser_weight = [0] * len(folders)
-        weight_vector_prev_iteration = np.asarray(previous_input_parser_weight)
-        weight_vector_this_iteration = np.asarray(input_parser_label_weight)
-        while (iteration < 6):
-            weight_vector_prev_iteration = weight_vector_this_iteration
-            medcpt_aggregate_labels_dictionary[iteration] = {}
-            for k in range(1, sentence_count + 1):
-                medcpt_clusters = medcpt_aggregate_clusters_dictionary[medcpt_iteration][k]['medcpt_clusters']
-                medcpt_pos = medcpt_aggregate_clusters_dictionary[medcpt_iteration][k]['medcpt_pos']
-                error = medcpt_aggregate_clusters_dictionary[medcpt_iteration][k]['error']
-
-                pos_aggregation = medcpt_object.aggregate_pos_labels(medcpt_pos=medcpt_pos,
-                                                                     input_parser_weight=input_parser_label_weight)
-
-                medcpt_aggregate_labels_dictionary[iteration][k] = {}
-                medcpt_aggregate_labels_dictionary[iteration][k]['medcpt_clusters'] = medcpt_clusters
-                medcpt_aggregate_labels_dictionary[iteration][k]['medcpt_pos'] = medcpt_pos
-                medcpt_aggregate_labels_dictionary[iteration][k]['pos_aggregation'] = pos_aggregation
-                medcpt_aggregate_labels_dictionary[iteration][k]['error'] = error
-                print(k)
-            medcpt_aggregate_labels_dictionary[iteration]['input_parser_label_weight'] = input_parser_label_weight
-            iteration = iteration + 1
-            input_parser_label_weight = medcpt_object.get_input_parser_weight_labels_log(iteration=iteration,
-                                                                            pickle_dataset_dump_directory=pickle_dataset_dump_directory,
-                                                                            folders=folders,
-                                                                            sentence_count=sentence_count,
-                                                                            medcpt_dictionary=
-                                                                            medcpt_aggregate_labels_dictionary[
-                                                                                iteration - 1])
-            weight_vector_this_iteration = np.asarray(input_parser_label_weight)
-            print(input_parser_label_weight)
-        with open(str(medcpt_directory) + '/medcpt_aggregate_labels_dictionary_log.pickle', 'wb') as handle:
-            pickle.dump(medcpt_aggregate_labels_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-        with open(str(medcpt_directory) + '/medcpt_aggregate_labels_dictionary_log.pickle', 'rb') as handle:
-            medcpt_aggregate_labels_dictionary_pickle = pickle.load(handle)
-
-        print(medcpt_aggregate_labels_dictionary_pickle == medcpt_aggregate_labels_dictionary)
-
-    return True
-
-
-def medcpt_aggregate_clusters(directories, folders, sentences):
-    pickle_dump_directory = "dictionary_pickle_files/"
-
-    for d in range(0, len(directories)):
-        dataset = directories[d]
-        pickle_dataset_dump_directory = str(pickle_dump_directory) + str(directories[d])
-        medcpt_directory = str(pickle_dump_directory) + str(dataset) + 'medcpt'
-        sentence_count = sentences[d]
-        with open(str(medcpt_directory) + '/input_cluster_support_dictionary.pickle', 'rb') as handle:
-            input_cluster_support_dictionary = pickle.load(handle)
-
-        iteration = 1
-        medcpt_object = medcpt(cluster_span=[], cluster_pos=[])
-        medcpt_aggregate_clusters_dictionary = {}
-        input_parser_weight = medcpt_object.get_input_parser_weight_log(iteration=iteration, pickle_dataset_dump_directory= pickle_dataset_dump_directory, folders=folders, sentence_count=sentence_count, medcpt_dictionary=medcpt_aggregate_clusters_dictionary)
-        previous_input_parser_weight = [0]*len(folders)
-        weight_vector_prev_iteration = np.asarray(previous_input_parser_weight)
-        weight_vector_this_iteration = np.asarray(input_parser_weight)
-        while (iteration < 6):
-            weight_vector_prev_iteration = weight_vector_this_iteration
-            medcpt_aggregate_clusters_dictionary[iteration] = {}
-            for k in range(1, sentence_count+1):
-                total_unique_cluster_span = input_cluster_support_dictionary[k]['total_unique_cluster_span']
-                total_unique_cluster_support = input_cluster_support_dictionary[k]['total_unique_cluster_support']
-                total_unique_cluster_pos = input_cluster_support_dictionary[k]['total_unique_cluster_pos']
-                error = input_cluster_support_dictionary[k]['error']
-
-                medcpt_clusters, medcpt_pos = medcpt_object.aggregate_clusters(input_parser_weight= input_parser_weight, total_unique_cluster_span=total_unique_cluster_span, total_unique_cluster_support=total_unique_cluster_support,
-                                                                               total_unique_cluster_pos=total_unique_cluster_pos, error=error)
-
-                mv_pos_aggregation = medcpt_object.aggregate_pos_labels(medcpt_pos=medcpt_pos, input_parser_weight= [1]*len(folders))
-                weight_pos_aggregation = medcpt_object.aggregate_pos_labels(medcpt_pos=medcpt_pos, input_parser_weight= input_parser_weight)
-
-                medcpt_aggregate_clusters_dictionary[iteration][k] = {}
-                medcpt_aggregate_clusters_dictionary[iteration][k]['medcpt_clusters'] = medcpt_clusters
-                medcpt_aggregate_clusters_dictionary[iteration][k]['medcpt_pos'] = medcpt_pos
-                medcpt_aggregate_clusters_dictionary[iteration][k]['mv_pos_aggregation'] = mv_pos_aggregation
-                medcpt_aggregate_clusters_dictionary[iteration][k]['weight_pos_aggregation'] = weight_pos_aggregation
-                medcpt_aggregate_clusters_dictionary[iteration][k]['error'] = error
-                print(k)
-            medcpt_aggregate_clusters_dictionary[iteration]['input_parser_weight'] = input_parser_weight
-            iteration = iteration + 1
-            input_parser_weight = medcpt_object.get_input_parser_weight_log(iteration=iteration,
                                                                         pickle_dataset_dump_directory=pickle_dataset_dump_directory,
                                                                         folders=folders,
                                                                         sentence_count=sentence_count,
-                                                                        medcpt_dictionary=medcpt_aggregate_clusters_dictionary[iteration-1])
-            weight_vector_this_iteration = np.asarray(input_parser_weight)
-            print(input_parser_weight)
-        with open(str(medcpt_directory) + '/medcpt_aggregate_clusters_dictionary_log.pickle', 'wb') as handle:
-            pickle.dump(medcpt_aggregate_clusters_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                                                                        medcpt_dictionary=
+                                                                        medcpt_aggregate_labels_dictionary[
+                                                                            iteration - 1])
+        weight_vector_this_iteration = np.asarray(input_parser_label_weight)
+        print(input_parser_label_weight)
+    with open(str(medcpt_directory) + '/medcpt_aggregate_labels_dictionary_log.pickle', 'wb') as handle:
+        pickle.dump(medcpt_aggregate_labels_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        with open(str(medcpt_directory) + '/medcpt_aggregate_clusters_dictionary_log.pickle', 'rb') as handle:
-            medcpt_aggregate_clusters_dictionary_pickle = pickle.load(handle)
+    with open(str(medcpt_directory) + '/medcpt_aggregate_labels_dictionary_log.pickle', 'rb') as handle:
+        medcpt_aggregate_labels_dictionary_pickle = pickle.load(handle)
 
-        print(medcpt_aggregate_clusters_dictionary_pickle == medcpt_aggregate_clusters_dictionary)
-
-    return True
-
-
-def unique_cluster_main(directories, folders, sentences):
-    pickle_dump_directory = "dictionary_pickle_files/"
-
-    for i in range(0, len(directories)):
-        directory = str(pickle_dump_directory) + str(directories[i])
-        sentence_count = sentences[i]
-        for j in range(0, len(folders)):
-            folder = folders[j]
-            pickle_path = str(directory) + str(folder) + '/'
-            with open(str(pickle_path) + '/sentence_cluster_dictionary.pickle', 'rb') as handle:
-                sentence_cluster_dictionary = pickle.load(handle)
-            unique_sentence_cluster_dictionary = {}
-            for k in range(1, sentence_count+1):
-                cluster_span = sentence_cluster_dictionary[k]['cluster_span']
-                cluster_pos = sentence_cluster_dictionary[k]['cluster_pos']
-                error = sentence_cluster_dictionary[k]['error']
-                if error == False:
-                    medcpt_object = medcpt(cluster_span=cluster_span, cluster_pos=cluster_pos)
-                    unique_cluster_span, unique_pos_span = medcpt_object.get_unique_cluster_span(cluster_span=cluster_span, cluster_pos=cluster_pos)
-                    unique_sentence_cluster_dictionary[k] = {}
-                    unique_sentence_cluster_dictionary[k]['unique_cluster_span'] = unique_cluster_span
-                    unique_sentence_cluster_dictionary[k]['unique_pos_span'] = unique_pos_span
-                    unique_sentence_cluster_dictionary[k]['error'] = error
-                else:
-                    unique_sentence_cluster_dictionary[k] = {}
-                    unique_sentence_cluster_dictionary[k]['unique_cluster_span'] = []
-                    unique_sentence_cluster_dictionary[k]['unique_pos_span'] = []
-                    unique_sentence_cluster_dictionary[k]['error'] = error
-
-
-            with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'wb') as handle:
-                pickle.dump(unique_sentence_cluster_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-            with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'rb') as handle:
-                unique_sentence_cluster_dictionary_pickle = pickle.load(handle)
-
-            print(unique_sentence_cluster_dictionary_pickle == unique_sentence_cluster_dictionary)
+    print(medcpt_aggregate_labels_dictionary_pickle == medcpt_aggregate_labels_dictionary)
 
     return True
 
 
-def support_main(directories, folders, sentences):
+def medcpt_aggregate_clusters(input_directory, folders, sentence_count):
     pickle_dump_directory = "dictionary_pickle_files/"
 
-    for d in range(0, len(directories)):
-        directory = str(pickle_dump_directory) + str(directories[d])
-        sentence_count = sentences[d]
+    pickle_dataset_dump_directory = os.path.join(pickle_dump_directory, input_directory)
+    medcpt_directory = os.path.join(pickle_dump_directory, input_directory, 'medcpt')
+    with open(os.path.join(medcpt_directory, 'input_cluster_support_dictionary.pickle'), 'rb') as handle:
+        input_cluster_support_dictionary = pickle.load(handle)
 
-        loop_dictionary = {}
-        for f in range(0, len(folders)):
-            loop_dictionary[f] = {}
-            pickle_path = str(directory) + str(folders[f])
-            with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'rb') as handle:
-                unique_sentence_cluster_dictionary = pickle.load(handle)
-            loop_dictionary[f]['dictionary'] = unique_sentence_cluster_dictionary
+    iteration = 1
+    medcpt_object = medcpt(cluster_span=[], cluster_pos=[])
+    medcpt_aggregate_clusters_dictionary = {}
+    input_parser_weight = medcpt_object.get_input_parser_weight_log(iteration=iteration, pickle_dataset_dump_directory= pickle_dataset_dump_directory, folders=folders, sentence_count=sentence_count, medcpt_dictionary=medcpt_aggregate_clusters_dictionary)
+    previous_input_parser_weight = [0]*len(folders)
+    weight_vector_prev_iteration = np.asarray(previous_input_parser_weight)
+    weight_vector_this_iteration = np.asarray(input_parser_weight)
+    while (iteration < 6):
+        weight_vector_prev_iteration = weight_vector_this_iteration
+        medcpt_aggregate_clusters_dictionary[iteration] = {}
+        for k in range(1, sentence_count+1):
+            total_unique_cluster_span = input_cluster_support_dictionary[k]['total_unique_cluster_span']
+            total_unique_cluster_support = input_cluster_support_dictionary[k]['total_unique_cluster_support']
+            total_unique_cluster_pos = input_cluster_support_dictionary[k]['total_unique_cluster_pos']
+            error = input_cluster_support_dictionary[k]['error']
 
-        input_cluster_support_dictionary = {}
-        input_parser_count = len(folders)
-        for k in range(1, sentence_count + 1):
-            current_sentence_count = k
-            input_cluster_support_dictionary[current_sentence_count] = {}
-            medcpt_object = medcpt(cluster_span=[], cluster_pos=[])
-            total_unique_cluster_span, total_unique_cluster_support, total_unique_cluster_pos = medcpt_object.get_support(loop_dictionary=loop_dictionary, input_parser_count=input_parser_count, current_sentence_count=current_sentence_count)
-            input_cluster_support_dictionary[current_sentence_count]['total_unique_cluster_span'] = total_unique_cluster_span
-            input_cluster_support_dictionary[current_sentence_count]['total_unique_cluster_support'] = total_unique_cluster_support
-            input_cluster_support_dictionary[current_sentence_count]['total_unique_cluster_pos'] = total_unique_cluster_pos
-            error_boolean = False
-            for f in range(0, input_parser_count):
-                error = loop_dictionary[f]['dictionary'][current_sentence_count]['error']
-                if (error_boolean or error):
-                    error_boolean = True
-            input_cluster_support_dictionary[current_sentence_count]['error'] = error_boolean
+            medcpt_clusters, medcpt_pos = medcpt_object.aggregate_clusters(input_parser_weight= input_parser_weight, total_unique_cluster_span=total_unique_cluster_span, total_unique_cluster_support=total_unique_cluster_support,
+                                                                           total_unique_cluster_pos=total_unique_cluster_pos, error=error)
 
-        if not os.path.exists(directory):
-            os.mkdir(directory)
-        medcpt_directory = str(directory) + 'medcpt'
-        if not os.path.exists(medcpt_directory):
-            os.mkdir(medcpt_directory)
+            mv_pos_aggregation = medcpt_object.aggregate_pos_labels(medcpt_pos=medcpt_pos, input_parser_weight= [1]*len(folders))
+            weight_pos_aggregation = medcpt_object.aggregate_pos_labels(medcpt_pos=medcpt_pos, input_parser_weight= input_parser_weight)
 
-        with open(str(medcpt_directory) + '/input_cluster_support_dictionary.pickle', 'wb') as handle:
-            pickle.dump(input_cluster_support_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            medcpt_aggregate_clusters_dictionary[iteration][k] = {}
+            medcpt_aggregate_clusters_dictionary[iteration][k]['medcpt_clusters'] = medcpt_clusters
+            medcpt_aggregate_clusters_dictionary[iteration][k]['medcpt_pos'] = medcpt_pos
+            medcpt_aggregate_clusters_dictionary[iteration][k]['mv_pos_aggregation'] = mv_pos_aggregation
+            medcpt_aggregate_clusters_dictionary[iteration][k]['weight_pos_aggregation'] = weight_pos_aggregation
+            medcpt_aggregate_clusters_dictionary[iteration][k]['error'] = error
+            print(k)
+        medcpt_aggregate_clusters_dictionary[iteration]['input_parser_weight'] = input_parser_weight
+        iteration = iteration + 1
+        input_parser_weight = medcpt_object.get_input_parser_weight_log(iteration=iteration,
+                                                                    pickle_dataset_dump_directory=pickle_dataset_dump_directory,
+                                                                    folders=folders,
+                                                                    sentence_count=sentence_count,
+                                                                    medcpt_dictionary=medcpt_aggregate_clusters_dictionary[iteration-1])
+        weight_vector_this_iteration = np.asarray(input_parser_weight)
+        print(input_parser_weight)
+    with open(str(medcpt_directory) + '/medcpt_aggregate_clusters_dictionary_log.pickle', 'wb') as handle:
+        pickle.dump(medcpt_aggregate_clusters_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        with open(str(medcpt_directory) + '/input_cluster_support_dictionary.pickle', 'rb') as handle:
-            input_cluster_support_dictionary_pickle = pickle.load(handle)
+    with open(str(medcpt_directory) + '/medcpt_aggregate_clusters_dictionary_log.pickle', 'rb') as handle:
+        medcpt_aggregate_clusters_dictionary_pickle = pickle.load(handle)
 
-        print(input_cluster_support_dictionary_pickle == input_cluster_support_dictionary)
+    print(medcpt_aggregate_clusters_dictionary_pickle == medcpt_aggregate_clusters_dictionary)
+
+    return True
+
+
+def unique_cluster_main(input_directory, folders, sentence_count):
+    pickle_dump_directory = "dictionary_pickle_files/"
+    directory = os.path.join(pickle_dump_directory, input_directory)
+
+    for f, folder in enumerate(folders):
+        pickle_path = os.path.join(directory, folder)
+        with open(str(pickle_path) + '/sentence_cluster_dictionary.pickle', 'rb') as handle:
+            sentence_cluster_dictionary = pickle.load(handle)
+        unique_sentence_cluster_dictionary = {}
+        for k in range(1, sentence_count+1):
+            cluster_span = sentence_cluster_dictionary[k]['cluster_span']
+            cluster_pos = sentence_cluster_dictionary[k]['cluster_pos']
+            error = sentence_cluster_dictionary[k]['error']
+            if not error:
+                medcpt_object = medcpt(cluster_span=cluster_span, cluster_pos=cluster_pos)
+                unique_cluster_span, unique_pos_span = medcpt_object.get_unique_cluster_span(cluster_span=cluster_span, cluster_pos=cluster_pos)
+                unique_sentence_cluster_dictionary[k] = {}
+                unique_sentence_cluster_dictionary[k]['unique_cluster_span'] = unique_cluster_span
+                unique_sentence_cluster_dictionary[k]['unique_pos_span'] = unique_pos_span
+                unique_sentence_cluster_dictionary[k]['error'] = error
+            else:
+                unique_sentence_cluster_dictionary[k] = {}
+                unique_sentence_cluster_dictionary[k]['unique_cluster_span'] = []
+                unique_sentence_cluster_dictionary[k]['unique_pos_span'] = []
+                unique_sentence_cluster_dictionary[k]['error'] = error
+
+        with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'wb') as handle:
+            pickle.dump(unique_sentence_cluster_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'rb') as handle:
+            unique_sentence_cluster_dictionary_pickle = pickle.load(handle)
+
+        print(unique_sentence_cluster_dictionary_pickle == unique_sentence_cluster_dictionary)
+
+    return True
+
+
+def support_main(input_directory, folders, sentence_count):
+    pickle_dump_directory = "dictionary_pickle_files/"
+    directory = os.path.join(pickle_dump_directory, input_directory)
+
+    loop_dictionary = {}
+    for f, folder in enumerate(folders):
+        loop_dictionary[f] = {}
+        pickle_path = os.path.join(directory, folder)
+        with open(str(pickle_path) + '/unique_sentence_cluster_dictionary.pickle', 'rb') as handle:
+            unique_sentence_cluster_dictionary = pickle.load(handle)
+        loop_dictionary[f]['dictionary'] = unique_sentence_cluster_dictionary
+
+    input_cluster_support_dictionary = {}
+    input_parser_count = len(folders)
+    for k in range(1, sentence_count + 1):
+        current_sentence_count = k
+        input_cluster_support_dictionary[current_sentence_count] = {}
+        medcpt_object = medcpt(cluster_span=[], cluster_pos=[])
+        total_unique_cluster_span, total_unique_cluster_support, total_unique_cluster_pos = medcpt_object.get_support(loop_dictionary=loop_dictionary, input_parser_count=input_parser_count, current_sentence_count=current_sentence_count)
+        input_cluster_support_dictionary[current_sentence_count]['total_unique_cluster_span'] = total_unique_cluster_span
+        input_cluster_support_dictionary[current_sentence_count]['total_unique_cluster_support'] = total_unique_cluster_support
+        input_cluster_support_dictionary[current_sentence_count]['total_unique_cluster_pos'] = total_unique_cluster_pos
+        error_boolean = False
+        for f in range(0, input_parser_count):
+            error = loop_dictionary[f]['dictionary'][current_sentence_count]['error']
+            if (error_boolean or error):
+                error_boolean = True
+        input_cluster_support_dictionary[current_sentence_count]['error'] = error_boolean
+
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    medcpt_directory = str(directory) + 'medcpt'
+    if not os.path.exists(medcpt_directory):
+        os.mkdir(medcpt_directory)
+
+    with open(str(medcpt_directory) + '/input_cluster_support_dictionary.pickle', 'wb') as handle:
+        pickle.dump(input_cluster_support_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(str(medcpt_directory) + '/input_cluster_support_dictionary.pickle', 'rb') as handle:
+        input_cluster_support_dictionary_pickle = pickle.load(handle)
+
+    print(input_cluster_support_dictionary_pickle == input_cluster_support_dictionary)
 
     return True
 
 
 if __name__ == '__main__':
     folds = ["berkeley", "corenlp", "allennlp"]
-    # CHANGE THESE VALUES TO PROCESS A DIFFERENT SET OF TEST SENTENCES
-    dirs = ["basic_VPE/"]
-    sents = [10]
+    input_dir = args.test_sentences
+    sents = len(os.listdir(os.path.join('dataset', input_dir, 'allennlp')))
 
-    run = unique_cluster_main(dirs, folds, sents)
-    run1 = support_main(dirs, folds, sents)
-    run2 = medcpt_aggregate_clusters(dirs, folds, sents)
-    run3 = medcpt_aggregate_labels(dirs, folds, sents)
+    run = unique_cluster_main(input_dir, folds, sents)
+    run1 = support_main(input_dir, folds, sents)
+    run2 = medcpt_aggregate_clusters(input_dir, folds, sents)
+    run3 = medcpt_aggregate_labels(input_dir, folds, sents)
