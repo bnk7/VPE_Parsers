@@ -16,18 +16,25 @@ pip install allennlp==2.10.1 allennlp-models==2.10.1
 python -m spacy download en_core_web_md
 ```
 
-Run the following in Python:
-```
-import stanza
-stanza.install_corenlp()
-```
-
 ## Execution Flow
 1. create_trees.py
 2. resources.py
 3. medcpt.py
 4. print_trees.py
 5. to_latex.py
+
+Each Python script requires the user to specify the test_sentences argument, which can be one of the following:
+- basic_VPE
+- callhome_non_VPE
+- callhome_VPE
+- coraal
+- non_VPE
+- VPE_examples
+
+The command to run all the scripts on a set of test sentences is
+```
+bash run_all.sh TEST_SENTENCE_OPTION
+```
 
 ## Code Description
 ### create_trees.py
@@ -58,7 +65,6 @@ These are dependencies for medcpt.py.
 In addition to the Python scripts, this repository includes test sentences to use as input.
 The sentences are drawn from Goldner (2021), Canavan et al. (1997), and Kendall and Farrington (2023) and grouped by 
 source and type.
-The user should change the commented variables in each code file to switch to a different test sentence group.
 
 ## Preliminary Analysis
 In line with the goal of preparing the way for automatic rule-based detection of VPE, I include some observations about 
